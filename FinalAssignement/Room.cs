@@ -8,8 +8,8 @@ namespace Zharphyn
         private Door[] cardinal = new Door[4];
         private Inventory inventory;
 
-        private int height;
-        private int width;
+        private int height; // future use
+        private int width; // future use
         private string roomDescription;
         private int numberOfDoors;
         private bool isPlayer;

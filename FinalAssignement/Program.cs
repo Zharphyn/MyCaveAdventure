@@ -10,7 +10,7 @@ namespace FinalProject
 {
     class Program
     {
-        const int timer = 20;
+        const int timer = 20;  // number of milliseconds between each character being written to the display
         
         // Create n number of room Instances 
         public static Room[] CreateMaze(int number)
@@ -86,13 +86,43 @@ namespace FinalProject
                     break;
             }
         }
+           
+        // because of how the actions are structured, some commands will not work,
+        // so we correct it to the correct command
+        static string CleanAction(string userInput)
+        {
+            switch (userInput)
+            {
+                case "w":
+                case "west":
+                    userInput = "go west";
+                    break;
+                case "e":
+                case "east":
+                    userInput = "go east";
+                    break;
+                case "n":
+                case "north":
+                    userInput = "go north";
+                    break;
+                case "s":
+                case "south":
+                    userInput = "go south";
+                    break;
+                case "get water":
+                    userInput = "use sink";
+                    break;
+            }
+            return userInput;
+        }
 
         // Validate actions and execute them
         public static void MakeActions(Room[] maze, Player player)
         {
             string userInput = Console.ReadLine();
-            userInput = userInput.ToLower();
-            
+            userInput = CleanAction(userInput.ToLower());
+
+
             // Check if the user enter something
             if (userInput.Length <= 0)
             {
@@ -103,7 +133,6 @@ namespace FinalProject
                 int index = userInput.IndexOf(' '); ;
                 string userAction;
                 string userSelection;
-
                 // Check if the user enter two words
                 try
                 {
@@ -115,6 +144,9 @@ namespace FinalProject
                     Write("You need an action and an object.\n");
                     return;
                 }
+
+
+
 
                 // Make user action
                 switch (userAction)
@@ -129,6 +161,7 @@ namespace FinalProject
                             }
                         }
                         break;
+                    case "get":
                     case "pick":
                         foreach (Room room in maze)
                         {
@@ -153,9 +186,9 @@ namespace FinalProject
                             }
                         }
                         break;
-                        // WIP
+                    // WIP
                     case "drop":
-                        if(player.Inventory.CountItems() <= 0)
+                        if (player.Inventory.CountItems() <= 0)
                         {
                             Write("No items in inventory.\n");
                         }
@@ -188,7 +221,7 @@ namespace FinalProject
                             {
                                 if (room.IsPlayer)
                                 {
-                                    if(room.Inventory.CountItems() <= 0)
+                                    if (room.Inventory.CountItems() <= 0)
                                     {
                                         Write("You can't see much around.\n");
                                     }
@@ -209,117 +242,141 @@ namespace FinalProject
                             if (player.Inventory.CountItems() <= 0)
                             {
                                 Write("No items in inventory.\n");
-                            }   
+                            }
                             else
                             {
                                 foreach (Item item in player.Inventory.FullInventory)
                                 {
-                                    if(player.Inventory.CountItems() == 1)
+                                    if (player.Inventory.CountItems() == 1)
                                         Write("Your inventory contains" + " " + item.Appearance + "\n");
                                     else
-                                        Write("Your inventory contains" + " " + item.Appearance + " " +"\n");
+                                        Write("Your inventory contains" + " " + item.Appearance + " " + "\n");
                                 }
                             }
                         }
-                        else if(userSelection != null)
-                        {
-                            CheckObject(userSelection, player, maze);
-                        }
+
                         else { Write("Selection not recognized.\n"); }
+                        break;
+                    case "use":
+                        if (userSelection == "sink")
+                        {
+                            if (player.Inventory.InInventory(new Bucket()))
+                            {
+                                Bucket bucket = (Bucket)player.Inventory.GetItem(new Bucket());
+                                bucket.Filled = true;
+                                Write("Bucket filled!. \n");
+                            }
+                            else
+                            {
+                                Write("Water splashes on the floor...\n");
+                            }
+                        }
+                        else
+                        {
+                            Write("I do not know how to use that!\n");
+                        }
+                        break;
+                    case "talk":
+                        if (userSelection == "brad" || userSelection == "man")
+                        {
+                            foreach (Room room in maze)
+                            {
+                                if (room.IsPlayer)
+                                {
+                                    if (room.Inventory.InInventory(new NPC()))
+                                    {
+                                        NPC Brad = (NPC)room.Inventory.GetItem(new NPC());
+                                        Write(Brad.Speak + "\n");
+                                    }
+                                    else
+                                    {
+                                        Write("There's no one else here.\n");
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            Write("I cannot talk to that!\n");
+                        }
+                        break;
+                    case "water":
+                        if (userSelection == "plant")
+                        {
+                            if (player.Inventory.InInventory(new Bucket()))
+                            {
+                                Bucket bucket = (Bucket)player.Inventory.GetItem(new Bucket());
+                                if (bucket.Filled)
+                                {
+                                    foreach (Room room in maze)
+                                    {
+                                        if (room.Inventory.InInventory(new Plant()))
+                                        {
+                                            Plant plant = (Plant)room.Inventory.GetItem(new Plant());
+                                            plant.Water();
+                                            bucket.Filled = false;
+                                            Write(player.Name + " " + "poured water over the plant.\n");
+                                            Write(plant.Appearance + "\n");
+                                            if (plant.Size() == PlantSize.LARGE)
+                                            {
+                                                plant.Appearance = "There is a massive plant in here. The top of it has broken through the ceiling.";
+                                                room.Inventory.AddItem(CreateKey());
+                                            }
+                                        }
+                                    }
+
+                                }
+                            }
+                        }
+                        else
+                        {
+                            Write("I do not know how to water that!\n");
+                        }
+                        break;
+                    case "read":
+                        if (userSelection == "book" || userSelection == "journal")
+                        {
+                            if (player.Inventory.InInventory(new Paper()))
+                            {
+                                Paper journal = (Paper)player.Inventory.GetItem(new Paper());
+                                Write(journal.Writing + "\n");
+                            }
+                            else
+                            {
+                                Write("You aren't carrying anything that you can read.\n");
+                            }
+                        }
+                        else
+                        {
+                            Write("I do not know how to read that!\n");
+                        }
+                        break;
+                    case "unlock":
+                        if (userSelection == "door")
+                        {
+                            if (player.Inventory.InInventory(new Key()))
+                            {
+                                foreach (Room room in maze)
+                                {
+                                    if (!room.Cardinal[1].IsOpen)
+                                    {
+                                        room.Cardinal[1].IsOpen = true;
+                                        Write("You opened the door!. \n");
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            Write("I do not know how to unlock that!\n");
+                        }
                         break;
                     default:
                         Write("Action not recognized\n");
                         break;
                 }
 
-            }
-        }
-
-        public static void CheckObject(string userSelection, Player player, Room[] maze)
-        {
-            switch(userSelection)
-            {
-                case "sink":
-                    if(player.Inventory.InInventory(new Bucket()))
-                    {
-                        Bucket bucket = (Bucket)player.Inventory.GetItem(new Bucket());
-                        bucket.Filled = true;
-                        Write("Bucket filled!. \n");
-                    }
-                    else
-                    {
-                        Write("Water splashes on the floor...\n");
-                    }
-                    break;
-                case "brad":
-                    foreach (Room room in maze)
-                    {
-                        if(room.IsPlayer)
-                        {
-                            if(room.Inventory.InInventory(new NPC()))
-                            {
-                                NPC Brad = (NPC)room.Inventory.GetItem(new NPC());
-                                Write(Brad.Speak + "\n");
-                            }
-                            else
-                            {
-                                Write("There's no one else here.\n");
-                            }
-                        }
-        
-                    }
-                    break;
-                case "plant":
-                    if(player.Inventory.InInventory(new Bucket()))
-                    {
-                        Bucket bucket = (Bucket)player.Inventory.GetItem(new Bucket());
-                        if(bucket.Filled)
-                        {
-                            foreach (Room room in maze)
-                            {
-                                if (room.Inventory.InInventory(new Plant()))
-                                {
-                                    Plant plant = (Plant)room.Inventory.GetItem(new Plant());
-                                    plant.Water();
-                                    bucket.Filled = false;
-                                    Write(player.Name + " " + "poured water over the plant.\n");
-                                    Write(plant.Appearance + "\n");
-                                    if (plant.Size() == PlantSize.LARGE)
-                                    {
-                                        plant.Appearance = "There is a massive plant in here. The top of it has broken through the ceiling.";
-                                        room.Inventory.AddItem(CreateKey());
-                                    }
-                                }
-                            }
-                                
-                        }
-                    }
-                    break;
-                case "book":
-                    if (player.Inventory.InInventory(new Paper()))
-                    {
-                        Paper journal = (Paper)player.Inventory.GetItem(new Paper());
-                        Write(journal.Writing + "\n");
-                    }
-                    else
-                    {
-                        Write("You aren't carrying anything that you can read.\n");
-                    }
-                    break;
-                case "door":
-                    if(player.Inventory.InInventory(new Key()))
-                    {
-                        foreach (Room room in maze)
-                        {
-                            if(!room.Cardinal[1].IsOpen)
-                            {
-                                room.Cardinal[1].IsOpen = true;
-                                Write("You opened the door!. \n");
-                                return;
-                            }
-                        }
-                    }
-                    break;
             }
         }
 
