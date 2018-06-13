@@ -351,6 +351,7 @@ namespace FinalProject
                             Write("I do not know how to read that!\n");
                         }
                         break;
+                    case "open":
                     case "unlock":
                         if (userSelection == "door")
                         {
